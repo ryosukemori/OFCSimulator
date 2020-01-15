@@ -110,6 +110,10 @@ export const getters = {
   hands: (numberOfHands: number, deck: Card[] | null = null): Card[] => {
     const hands = [];
 
+    if (numberOfHands > 52) {
+      throw new Error('1デッキ以上の枚数が指定されている');
+    }
+
     if (deck === null) {
       deck = getters.deck();
     }
@@ -136,10 +140,10 @@ export const getters = {
     const hasHand: string[] = [];
 
     if (getters.hasOnePairHand(hands)) {
-      hasHand.push('One pair');
+      hasHand.push('OnePair');
     }
     if (getters.hasTwoPairHand(hands)) {
-      hasHand.push('Two pair');
+      hasHand.push('TwoPair');
     }
     if (getters.hasThreeOfAKindHand(hands)) {
       hasHand.push('ThreeOfAKind');
@@ -156,8 +160,28 @@ export const getters = {
     if (getters.hasQuadsHand(hands)) {
       hasHand.push('Quads');
     }
+    if (getters.hasStraightFlsdhHand(hands)) {
+      hasHand.push('StragithFlash');
+    }
 
     return hasHand;
+  },
+  /**
+   * ストレート・フラッシュ判定
+   */
+  hasStraightFlsdhHand: (hands: Card[] | null = null): boolean => {
+    if (hands === null) {
+      hands = state.hands;
+    }
+
+    for (const suitKey of Object.keys(state.suits)) {
+      const numberOfSuit: Card[] = hands.filter((hand) => hand.suit === state.suits[suitKey]);
+      if (numberOfSuit.length >= 5 && getters.hasStraightHand(numberOfSuit)) {
+        return true;
+      }
+    }
+
+    return false;
   },
   /**
    * クワッズ判定
