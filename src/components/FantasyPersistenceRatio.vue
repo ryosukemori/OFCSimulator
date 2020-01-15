@@ -10,7 +10,9 @@ import * as cardsStore from '@/stores/cards';
 @Component
 export default class FantasyPersistenceRatio extends Vue {
   get name() {
-    return cardsStore.getters.hands(2);
+    const hands = cardsStore.getters.hands(16);
+    const hasQuads = cardsStore.getters.possibleHand(hands);
+    return { hands, hasQuads };
   }
 }
 </script>

@@ -26,6 +26,8 @@ export interface State {
     king: number,
     [key: string]: number,
   };
+  deck: Card[];
+  hands: Card[];
 }
 
 export interface Card {
@@ -62,9 +64,26 @@ export const state = Vue.observable<State>({
     queen: 12,
     king: 13,
   },
+
+  /**
+   * デッキ
+   */
+  deck: [],
+
+  /**
+   * ハンド
+   */
+  hands: [],
 });
 
-export const mutations = {};
+export const mutations = {
+  updateDeck: (deck: Card[]): void => {
+    state.deck = deck;
+  },
+  updateHands: (hands: Card[]): void => {
+    state.hands = hands;
+  },
+};
 
 export const getters = {
   /**
@@ -106,5 +125,174 @@ export const getters = {
     }
 
     return hands;
+  },
+  /**
+   * ハンドから成立する役を判定する
+   */
+  possibleHand: (hands: Card[] | null = null): string[] => {
+    if (hands === null) {
+      hands = state.hands;
+    }
+    const hasHand: string[] = [];
+
+    if (getters.hasOnePairHand(hands)) {
+      hasHand.push('One pair');
+    }
+    if (getters.hasTwoPairHand(hands)) {
+      hasHand.push('Two pair');
+    }
+    if (getters.hasThreeOfAKindHand(hands)) {
+      hasHand.push('ThreeOfAKind');
+    }
+    if (getters.hasStraightHand(hands)) {
+      hasHand.push('Straight');
+    }
+    if (getters.hasFlashHand(hands)) {
+      hasHand.push('Flash');
+    }
+    if (getters.hasFullHouseHand(hands)) {
+      hasHand.push('FullHouse');
+    }
+    if (getters.hasQuadsHand(hands)) {
+      hasHand.push('Quads');
+    }
+
+    return hasHand;
+  },
+  /**
+   * クワッズ判定
+   */
+  hasQuadsHand: (hands: Card[] | null = null): boolean => {
+    if (hands === null) {
+      hands = state.hands;
+    }
+
+    for (const rankKey of Object.keys(state.ranks)) {
+      const numberOfRank: Card[] = hands.filter((hand) => hand.rank === state.ranks[rankKey]);
+      if (numberOfRank.length === 4) {
+        return true;
+      }
+    }
+
+    return false;
+  },
+  /**
+   * フルハウス判定
+   */
+  hasFullHouseHand: (hands: Card[] | null = null): boolean => {
+    if (hands === null) {
+      hands = state.hands;
+    }
+    let NumberOfThreeOfAKind = 0;
+    let NumberOfOnePair = 0;
+    for (const rankKey of Object.keys(state.ranks)) {
+      const numberOfRank: Card[] = hands.filter((hand) => hand.rank === state.ranks[rankKey]);
+      if (numberOfRank.length >= 3) {
+        NumberOfThreeOfAKind++;
+      }
+      if (numberOfRank.length >= 2) {
+        NumberOfOnePair++;
+      }
+    }
+
+    if (NumberOfThreeOfAKind >= 2) {
+      // スリー・オブ・ア・カインドが2カウント以上ある場合は成立する
+      return true;
+    } else if (NumberOfThreeOfAKind === 1 && NumberOfOnePair >= 2) {
+      // スリー・オブ・ア・カインドが1カウントの場合、ワンペアカウントが2以上ある時成立する
+      return true;
+    }
+
+    return false;
+  },
+  /**
+   * フラッシュ判定
+   */
+  hasFlashHand: (hands: Card[] | null = null): boolean => {
+    if (hands === null) {
+      hands = state.hands;
+    }
+
+    for (const suitKey of Object.keys(state.suits)) {
+      const numberOfSuit: Card[] = hands.filter((hand) => hand.suit === state.suits[suitKey]);
+      if (numberOfSuit.length >= 5) {
+        return true;
+      }
+    }
+
+    return false;
+  },
+  /**
+   * ストレート判定
+   */
+  hasStraightHand: (hands: Card[] | null = null): boolean => {
+    if (hands === null) {
+      hands = state.hands;
+    }
+
+    let hasRankBinary = '';
+    const handRanks: number[] = hands.map((hand) => hand.rank);
+    for (const rankKey of Object.keys(state.ranks)) {
+      hasRankBinary += handRanks.indexOf(state.ranks[rankKey]) !== -1 ? '1' : '0';
+    }
+
+    if (hasRankBinary.indexOf('11111') !== -1) {
+      return true;
+    }
+    return false;
+  },
+  /**
+   * スリー・オブ・ア・カインド判定
+   */
+  hasThreeOfAKindHand: (hands: Card[] | null = null): boolean => {
+    if (hands === null) {
+      hands = state.hands;
+    }
+
+    for (const rankKey of Object.keys(state.ranks)) {
+      const numberOfRank: Card[] = hands.filter((hand) => hand.rank === state.ranks[rankKey]);
+      if (numberOfRank.length >= 3) {
+        return true;
+      }
+    }
+
+    return false;
+  },
+  /**
+   * ツーペア判定
+   */
+  hasTwoPairHand: (hands: Card[] | null = null): boolean => {
+    if (hands === null) {
+      hands = state.hands;
+    }
+
+    let pairs = 0;
+    for (const rankKey of Object.keys(state.ranks)) {
+      const numberOfRank: Card[] = hands.filter((hand) => hand.rank === state.ranks[rankKey]);
+      pairs += numberOfRank.length >= 2 ? 1 : 0;
+
+      if (pairs >= 2) {
+        return true;
+      }
+    }
+
+    return false;
+  },
+  /**
+   * ワンペア判定
+   */
+  hasOnePairHand: (hands: Card[] | null = null): boolean => {
+    if (hands === null) {
+      hands = state.hands;
+    }
+
+    for (const rankKey of Object.keys(state.ranks)) {
+      const numberOfRank: Card[] = hands.filter((hand) => hand.rank === state.ranks[rankKey]);
+      if (numberOfRank.length >= 2) {
+        return true;
+      }
+    }
+
+    return false;
   },
 };
